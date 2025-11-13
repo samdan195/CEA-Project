@@ -1,0 +1,53 @@
+name: Docker CI/CD with Auto Tagging
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1️⃣ Checkout repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # 2️⃣ Set up Docker Buildx
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    # 3️⃣ Log in to Docker Hub
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    # 4️⃣ Generate timestamp tag (e.g., 20251114-1930)
+    - name: Generate Docker image tag
+      id: vars
+      run: echo "TAG=$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
+
+    # 5️⃣ Build Docker image with timestamp + latest tag
+    - name: Build Docker image
+      run: |
+        docker build -t samdan195/app-validator:${{ env.TAG }} -t samdan195/app-validator:latest .
+
+    # 6️⃣ Run test (generate sample to verify container)
+    - name: Run Docker container test
+      run: docker run --rm samdan195/app-validator:latest gen-sample --sample-name test_ci.csv
+
+    # 7️⃣ Push both tags to Docker Hub
+    - name: Push Docker images
+      run: |
+        docker push samdan195/app-validator:${{ env.TAG }}
+        docker push samdan195/app-validator:latest
+
+    # 8️⃣ Confirmation output
+    - name: Print success message
+      run: echo "✅ CI/CD complete. Image pushed as ${{ env.TAG }} and latest."
