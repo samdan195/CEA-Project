@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+.env
+.git
+.vscode
+data/archive
+data/rejected
+logs/*.log
+*.log
